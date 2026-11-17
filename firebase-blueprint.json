@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "UserHeroProfile": {
+      "title": "UserHeroProfile",
+      "description": "Hero training profile, level, XP, streak, and quirk mastery metrics for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase user UID."
+        },
+        "heroName": {
+          "type": "string",
+          "description": "Player's hero display name."
+        },
+        "partnerName": {
+          "type": "string",
+          "description": "Training partner name (Uravity / Ochako Uraraka)."
+        },
+        "heroRankTitle": {
+          "type": "string",
+          "description": "Hero rank and U.A. class title."
+        },
+        "heroLevel": {
+          "type": "integer",
+          "description": "Current hero level."
+        },
+        "currentXp": {
+          "type": "integer",
+          "description": "XP accumulated toward next hero level."
+        },
+        "xpForNextLevel": {
+          "type": "integer",
+          "description": "XP threshold required to advance to the next level."
+        },
+        "trainingStreakDays": {
+          "type": "integer",
+          "description": "Consecutive days of training."
+        },
+        "gravityControlMastery": {
+          "type": "integer",
+          "description": "Zero Gravity control mastery percentage (0-100)."
+        },
+        "combatReflexesMastery": {
+          "type": "integer",
+          "description": "Hero combat reflexes mastery percentage (0-100)."
+        },
+        "vocalPowerMastery": {
+          "type": "integer",
+          "description": "Voice command and vocal power mastery percentage (0-100)."
+        },
+        "enduranceStamina": {
+          "type": "integer",
+          "description": "Cooperative stamina and endurance percentage (0-100)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-generated creation timestamp (clients must submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-generated last update timestamp (clients must submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "heroName",
+        "partnerName",
+        "heroRankTitle",
+        "heroLevel",
+        "currentXp",
+        "xpForNextLevel",
+        "trainingStreakDays",
+        "gravityControlMastery",
+        "combatReflexesMastery",
+        "vocalPowerMastery",
+        "enduranceStamina",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TrainingSession": {
+      "title": "TrainingSession",
+      "description": "A recorded hero training, minigame, voice command, or video call session with Ochako Uraraka.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Session title."
+        },
+        "trainingType": {
+          "type": "string",
+          "description": "Category of hero training."
+        },
+        "dateString": {
+          "type": "string",
+          "description": "Human-readable session date string."
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "description": "Training duration in minutes."
+        },
+        "heroPoints": {
+          "type": "integer",
+          "description": "Hero points earned during the session."
+        },
+        "rankGrade": {
+          "type": "string",
+          "enum": [
+            "Rango S",
+            "Rango A",
+            "Rango B",
+            "Rango C"
+          ],
+          "description": "Performance rank grade."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Training notes or voice transcription."
+        },
+        "partnerQuote": {
+          "type": "string",
+          "description": "Motivational quote from Ochako Uraraka."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-generated creation timestamp (clients must submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server-generated last update timestamp (clients must submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "trainingType",
+        "dateString",
+        "durationMinutes",
+        "heroPoints",
+        "rankGrade",
+        "notes",
+        "partnerQuote",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserHeroProfile"
+      },
+      "description": "Per-user hero profile and mastery stats."
+    },
+    "/users/{userId}/training_sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/TrainingSession"
+      },
+      "description": "User-scoped training session log entries."
+    }
+  }
+}

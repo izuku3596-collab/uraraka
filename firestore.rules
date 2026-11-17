@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Shared primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Validation helper: UserHeroProfile
+    function isValidHeroProfile(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.heroName is string && data.heroName.size() >= 1 && data.heroName.size() <= 80 &&
+             data.partnerName is string && data.partnerName.size() >= 1 && data.partnerName.size() <= 80 &&
+             data.heroRankTitle is string && data.heroRankTitle.size() >= 1 && data.heroRankTitle.size() <= 100 &&
+             data.heroLevel is int && data.heroLevel >= 1 && data.heroLevel <= 999 &&
+             data.currentXp is int && data.currentXp >= 0 && data.currentXp <= 1000000 &&
+             data.xpForNextLevel is int && data.xpForNextLevel >= 100 && data.xpForNextLevel <= 10000000 &&
+             data.trainingStreakDays is int && data.trainingStreakDays >= 0 && data.trainingStreakDays <= 10000 &&
+             data.gravityControlMastery is int && data.gravityControlMastery >= 0 && data.gravityControlMastery <= 100 &&
+             data.combatReflexesMastery is int && data.combatReflexesMastery >= 0 && data.combatReflexesMastery <= 100 &&
+             data.vocalPowerMastery is int && data.vocalPowerMastery >= 0 && data.vocalPowerMastery <= 100 &&
+             data.enduranceStamina is int && data.enduranceStamina >= 0 && data.enduranceStamina <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation helper: TrainingSession
+    function isValidTrainingSession(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.trainingType is string && data.trainingType.size() >= 1 && data.trainingType.size() <= 80 &&
+             data.dateString is string && data.dateString.size() >= 1 && data.dateString.size() <= 60 &&
+             data.durationMinutes is int && data.durationMinutes >= 1 && data.durationMinutes <= 1440 &&
+             data.heroPoints is int && data.heroPoints >= 0 && data.heroPoints <= 100000 &&
+             data.rankGrade in ['Rango S', 'Rango A', 'Rango B', 'Rango C'] &&
+             data.notes is string && data.notes.size() <= 500 &&
+             data.partnerQuote is string && data.partnerQuote.size() <= 400 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // User profile document
+    match /users/{userId} {
+      allow get: if isSignedIn() && isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'heroName', 'partnerName', 'heroRankTitle',
+                         'heroLevel', 'currentXp', 'xpForNextLevel', 'trainingStreakDays',
+                         'gravityControlMastery', 'combatReflexesMastery', 'vocalPowerMastery',
+                         'enduranceStamina', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'heroName', 'partnerName', 'heroRankTitle',
+                         'heroLevel', 'currentXp', 'xpForNextLevel', 'trainingStreakDays',
+                         'gravityControlMastery', 'combatReflexesMastery', 'vocalPowerMastery',
+                         'enduranceStamina', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidHeroProfile(incoming(), userId);
+
+      allow update: if isSignedIn() &&
+                       isValidHeroProfile(incoming(), userId) &&
+                       isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'heroName', 'heroRankTitle', 'heroLevel', 'currentXp',
+                         'xpForNextLevel', 'trainingStreakDays', 'gravityControlMastery',
+                         'combatReflexesMastery', 'vocalPowerMastery', 'enduranceStamina',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isOwner(userId) && isValidId(userId);
+
+      // User-scoped training sessions subcollection
+      match /training_sessions/{sessionId} {
+        allow get: if isSignedIn() && isOwner(userId) && isValidId(userId) && isValidId(sessionId);
+        allow list: if isSignedIn() && isOwner(userId) && isValidId(userId);
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(sessionId) &&
+                         isOwner(userId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'trainingType', 'dateString',
+                           'durationMinutes', 'heroPoints', 'rankGrade',
+                           'notes', 'partnerQuote', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'trainingType', 'dateString',
+                           'durationMinutes', 'heroPoints', 'rankGrade',
+                           'notes', 'partnerQuote', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidTrainingSession(incoming(), userId);
+
+        allow update: if isSignedIn() &&
+                         isValidTrainingSession(incoming(), userId) &&
+                         isValidId(userId) &&
+                         isValidId(sessionId) &&
+                         isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'trainingType', 'notes', 'durationMinutes',
+                           'heroPoints', 'rankGrade', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isOwner(userId) && isValidId(userId) && isValidId(sessionId);
+      }
+    }
+  }
+}

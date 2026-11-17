@@ -1,0 +1,8 @@
+{
+  "name": "Uravity Call",
+  "description": "Simulador de videollamadas con Ochako Uraraka con comandos de voz por micrófono, minijuegos de entrenamiento de héroes y registro de progreso diario para Izuku Midoriya.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
